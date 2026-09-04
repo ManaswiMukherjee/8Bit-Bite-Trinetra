@@ -1,7 +1,9 @@
+// src/pages/Emergency.jsx
 import React, { useState } from 'react';
 import { useRealtimeData } from '../hooks/useRealtimeData';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { StatusBadge } from '../components/ui/StatusBadge';
 import { 
   AlertTriangle, 
   Shield, 
@@ -119,8 +121,8 @@ export const Emergency = () => {
           {/* Evacuation Route */}
           <Card>
             <h2 className="text-sm font-semibold text-white mb-4">Evacuation Route</h2>
-            <div className="flex items-center justify-between p-4 bg-dark-elevated rounded-lg">
-              <div className="flex items-center space-x-8">
+            <div className="flex items-center justify-between p-4 bg-dark-elevated rounded-lg overflow-x-auto">
+              <div className="flex items-center space-x-4 md:space-x-8 min-w-max">
                 <div className="text-center">
                   <div className="w-12 h-12 rounded-full bg-warning/20 flex items-center justify-center mx-auto mb-1">
                     <MapPin className="w-6 h-6 text-warning" />
@@ -128,7 +130,7 @@ export const Emergency = () => {
                   <span className="text-xs text-gray-400">Current Location</span>
                   <p className="text-sm text-white">Main Darshan</p>
                 </div>
-                <div className="flex-1 h-0.5 border-t-2 border-dashed border-warning/50 relative">
+                <div className="flex-1 w-16 md:w-32 h-0.5 border-t-2 border-dashed border-warning/50 relative">
                   <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-warning">↓</div>
                 </div>
                 <div className="text-center">
@@ -138,7 +140,7 @@ export const Emergency = () => {
                   <span className="text-xs text-gray-400">Emergency Corridor</span>
                   <p className="text-sm text-white">45m</p>
                 </div>
-                <div className="flex-1 h-0.5 border-t-2 border-dashed border-info/50 relative">
+                <div className="flex-1 w-16 md:w-32 h-0.5 border-t-2 border-dashed border-info/50 relative">
                   <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-info">↓</div>
                 </div>
                 <div className="text-center">

@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    // Try hardcoded users first
+    // Try hardcoded users first (no backend needed)
     const foundUser = USERS.find(
       u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
     );
@@ -66,10 +66,10 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', mockToken);
       localStorage.setItem('user', JSON.stringify(userWithoutPassword));
       axios.defaults.headers.common['Authorization'] = `Bearer ${mockToken}`;
-      return Promise.resolve({ token: mockToken, user: userWithoutPassword });
+      return { token: mockToken, user: userWithoutPassword };
     }
 
-    // If no hardcoded user, try the actual backend
+    // If no hardcoded user, try the actual backend (if available)
     try {
       const response = await axios.post(`${API_URL}/auth/login`, { email, password });
       const { token, user } = response.data;
@@ -81,6 +81,7 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       return response.data;
     } catch (error) {
+      // If backend fails, show helpful message
       throw new Error('Invalid credentials. Try: admin@trinetra.com / admin123');
     }
   };

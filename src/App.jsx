@@ -1,14 +1,19 @@
+// src/App.jsx
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { useAuth } from './context/AuthContext';
 
-// Layout
+// Public Pages
+import { Home } from './pages/Home';
+import { SignIn } from './pages/auth/SignIn';
+import { SignUp } from './pages/auth/SignUp';
+
+// Protected Layout
 import { AppShell } from './components/layout/AppShell';
 
-// Pages
-import { Login } from './pages/auth/Login';
+// Protected Pages
 import { Dashboard } from './pages/Dashboard';
 import { LiveMonitoring } from './pages/LiveMonitoring';
 import { CrowdManagement } from './pages/CrowdManagement';
@@ -33,7 +38,7 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/signin" replace />;
   }
 
   return children;
@@ -42,7 +47,12 @@ const ProtectedRoute = ({ children }) => {
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      {/* Public Routes */}
+      <Route path="/" element={<Home />} />
+      <Route path="/signin" element={<SignIn />} />
+      <Route path="/signup" element={<SignUp />} />
+      
+      {/* Protected Routes with Sidebar */}
       <Route
         path="/"
         element={
@@ -51,7 +61,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="monitoring" element={<LiveMonitoring />} />
         <Route path="crowd" element={<CrowdManagement />} />
@@ -62,8 +71,9 @@ const AppRoutes = () => {
         <Route path="incidents" element={<Incidents />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="*" element={<NotFound />} />
       </Route>
+      
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };

@@ -1,107 +1,278 @@
-import React, { useState, useEffect } from 'react';
-import { Menu, Bell, User, ChevronDown, Settings, LogOut, HelpCircle } from 'lucide-react';
+// src/components/layout/Topbar.jsx
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { 
+  Menu, 
+  Bell, 
+  User, 
+  ChevronDown, 
+  Settings, 
+  LogOut, 
+  HelpCircle,
+  Eye,
+  AlertTriangle,
+  Clock
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRealtimeData } from '../../hooks/useRealtimeData';
 import { format } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const Topbar = ({ onMenuClick }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const { user } = useAuth();
-  const { stats } = useRealtimeData();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { user, logout } = useAuth();
+  const { stats } = useRealtimeData();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const menuRef = useRef(null);
+  const buttonRef = useRef(null);
 
+  const criticalAlerts = stats?.activeAlerts || 0;
+  const hasCritical = criticalAlerts > 0;
+
+  // Page name mapping
+  const pageNames = {
+    '/dashboard': 'Dashboard',
+    '/monitoring': 'Live Monitoring',
+    '/crowd': 'Crowd Management',
+    '/temple-map': 'Temple Map',
+    '/alerts': 'Alert Center',
+    '/emergency': 'Emergency Center',
+    '/security': 'Security Operations',
+    '/incidents': 'Incident Intelligence',
+    '/analytics': 'Analytics',
+    '/settings': 'System Configuration',
+  };
+
+  const currentPage = pageNames[location.pathname] || 'Control Center';
+
+  // Update time every second
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const criticalAlerts = stats?.activeAlerts || 0;
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target) && 
+          buttonRef.current && !buttonRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close dropdown on Escape
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setShowUserMenu(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
+  const handleLogout = () => {
+    setShowUserMenu(false);
+    logout();
+    navigate('/');
+  };
+
+  const handleSettings = () => {
+    setShowUserMenu(false);
+    navigate('/settings');
+  };
+
+  const handleAlerts = () => {
+    navigate('/alerts');
+  };
+
+  // Get avatar initials
+  const getInitials = () => {
+    if (!user?.username) return 'A';
+    return user.username.charAt(0).toUpperCase();
+  };
 
   return (
-    <header className="bg-dark-panel border-b border-[rgba(255,255,255,0.08)] px-4 py-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={onMenuClick}
-            className="lg:hidden p-1.5 rounded-lg hover:bg-dark-elevated text-gray-400 hover:text-white transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <div className="hidden lg:block">
-            <h2 className="text-sm font-medium text-white">TRINETRA</h2>
-            <p className="text-xs text-gray-400">Control Center</p>
+    <header className="sticky top-0 z-40 h-16 min-h-[64px] bg-[#0B0F14] border-b border-[rgba(255,255,255,0.07)] flex items-center px-4 lg:px-6">
+      {/* Left Section */}
+      <div className="flex items-center flex-1 min-w-0">
+        {/* Mobile Menu */}
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-1.5 rounded hover:bg-[rgba(255,255,255,0.06)] transition-colors text-[#8B949E] hover:text-[#F5F5F0] mr-2"
+          aria-label="Toggle navigation menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        {/* TRINETRA Logo */}
+        <Link to="/dashboard" className="flex items-center space-x-2 flex-shrink-0">
+          <div className="w-7 h-7 rounded border border-[#E6A23C]/20 flex items-center justify-center bg-[#E6A23C]/5">
+            <Eye className="w-3.5 h-3.5 text-[#E6A23C]" />
+          </div>
+          <span className="text-sm font-bold text-[#F5F5F0] tracking-wide">TRINETRA</span>
+        </Link>
+
+        {/* Desktop Breadcrumb */}
+        <div className="hidden lg:flex items-center ml-3 pl-3 border-l border-[rgba(255,255,255,0.07)]">
+          <span className="text-sm text-[#8B949E]">/</span>
+          <span className="text-sm font-medium text-[#F5F5F0] ml-2">{currentPage}</span>
+          
+          {/* System Status - Desktop */}
+          <div className="flex items-center space-x-1.5 ml-4">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse"></span>
+            <span className="text-[10px] text-[#22C55E] tracking-wider uppercase font-medium">System Live</span>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          {/* Live indicator */}
-          <div className="flex items-center space-x-2">
-            <span className="status-dot-success animate-pulse"></span>
-            <span className="text-xs font-medium text-success">LIVE</span>
-          </div>
+        {/* Mobile Live Indicator */}
+        <div className="lg:hidden flex items-center space-x-1.5 ml-auto">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse"></span>
+          <span className="text-[8px] text-[#22C55E] tracking-wider uppercase font-medium">Live</span>
+        </div>
+      </div>
 
-          {/* Time */}
-          <span className="text-sm text-gray-400 hidden md:block">
+      {/* Center - Clock */}
+      <div className="hidden lg:flex items-center space-x-3 ml-auto">
+        <div className="flex items-center space-x-2 text-xs">
+          <Clock className="w-3.5 h-3.5 text-[#8B949E]" />
+          <span className="text-[#F5F5F0] font-mono font-medium">
             {format(currentTime, 'HH:mm:ss')}
           </span>
+          <span className="text-[#8B949E] text-[10px] font-mono">
+            {format(currentTime, 'dd MMM yyyy')}
+          </span>
+        </div>
+      </div>
 
-          {/* Alerts indicator */}
-          {criticalAlerts > 0 && (
-            <div className="relative">
-              <div className="flex items-center space-x-1 px-2 py-1 bg-critical/20 rounded-lg">
-                <span className="status-dot-critical"></span>
-                <span className="text-xs font-medium text-critical">{criticalAlerts}</span>
-              </div>
-            </div>
+      {/* Right Section */}
+      <div className="flex items-center space-x-1 lg:space-x-2 flex-shrink-0 ml-2 lg:ml-4">
+        {/* Alerts */}
+        <button
+          onClick={handleAlerts}
+          className="relative p-1.5 rounded hover:bg-[rgba(255,255,255,0.06)] transition-colors text-[#8B949E] hover:text-[#F5F5F0]"
+          aria-label={`${criticalAlerts} active alerts`}
+        >
+          <AlertTriangle className={`w-4 h-4 ${hasCritical ? 'text-[#EF4444]' : ''}`} />
+          {hasCritical && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-[#EF4444] text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse">
+              {criticalAlerts}
+            </span>
           )}
+        </button>
 
-          {/* Notification bell */}
-          <button className="p-1.5 rounded-lg hover:bg-dark-elevated text-gray-400 hover:text-white transition-colors relative">
-            <Bell className="w-5 h-5" />
-            {criticalAlerts > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-critical rounded-full animate-pulse"></span>
-            )}
+        {/* Notifications */}
+        <button 
+          className="relative p-1.5 rounded hover:bg-[rgba(255,255,255,0.06)] transition-colors text-[#8B949E] hover:text-[#F5F5F0]"
+          aria-label="Notifications"
+        >
+          <Bell className="w-4 h-4" />
+          {hasCritical && (
+            <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-[#EF4444]"></span>
+          )}
+        </button>
+
+        {/* User Profile */}
+        <div className="relative">
+          <button
+            ref={buttonRef}
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="flex items-center space-x-1.5 lg:space-x-2 p-1.5 rounded hover:bg-[rgba(255,255,255,0.06)] transition-colors group"
+            aria-expanded={showUserMenu}
+            aria-haspopup="true"
+          >
+            <div className="relative">
+              <div className="w-7 h-7 rounded-full bg-[#E6A23C]/10 border border-[#E6A23C]/20 flex items-center justify-center">
+                <span className="text-xs font-bold text-[#E6A23C]">{getInitials()}</span>
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#22C55E] border-2 border-[#0B0F14]"></div>
+            </div>
+            
+            {/* Desktop User Info */}
+            <div className="hidden lg:block text-left">
+              <p className="text-xs font-medium text-[#F5F5F0] leading-none">{user?.username || 'Admin'}</p>
+              <p className="text-[9px] text-[#8B949E] leading-none mt-0.5">{user?.role || 'Administrator'}</p>
+            </div>
+            
+            <ChevronDown className={`w-3.5 h-3.5 text-[#8B949E] transition-transform duration-150 ${showUserMenu ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* User menu */}
-          <div className="relative">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-dark-elevated transition-colors"
-            >
-              <div className="w-8 h-8 rounded-full bg-dark-elevated flex items-center justify-center">
-                <User className="w-4 h-4 text-gray-400" />
-              </div>
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            </button>
-
+          {/* Dropdown Menu */}
+          <AnimatePresence>
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-dark-panel border border-[rgba(255,255,255,0.08)] rounded-lg shadow-xl py-1 z-50">
-                <div className="px-4 py-2 border-b border-[rgba(255,255,255,0.08)]">
-                  <p className="text-sm font-medium text-white">{user?.username || 'Admin'}</p>
-                  <p className="text-xs text-gray-400">{user?.email || 'admin@trinetra.com'}</p>
+              <motion.div
+                ref={menuRef}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 mt-2 w-56 bg-[#0B0F14] border border-[rgba(255,255,255,0.07)] rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50"
+                role="menu"
+              >
+                {/* Header */}
+                <div className="p-4 border-b border-[rgba(255,255,255,0.07)]">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-9 h-9 rounded-full bg-[#E6A23C]/10 border border-[#E6A23C]/20 flex items-center justify-center">
+                      <span className="text-sm font-bold text-[#E6A23C]">{getInitials()}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-[#F5F5F0]">{user?.username || 'Admin'}</p>
+                      <p className="text-xs text-[#8B949E]">{user?.email || 'admin@trinetra.com'}</p>
+                      <div className="flex items-center space-x-1 mt-0.5">
+                        <span className="w-1 h-1 rounded-full bg-[#22C55E]"></span>
+                        <span className="text-[8px] text-[#22C55E] tracking-wider uppercase font-medium">Online</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <button className="flex items-center space-x-3 w-full px-4 py-2 text-sm text-gray-400 hover:bg-dark-elevated hover:text-white transition-colors">
-                  <User className="w-4 h-4" />
-                  <span>Profile</span>
-                </button>
-                <button className="flex items-center space-x-3 w-full px-4 py-2 text-sm text-gray-400 hover:bg-dark-elevated hover:text-white transition-colors">
-                  <Settings className="w-4 h-4" />
-                  <span>Settings</span>
-                </button>
-                <button className="flex items-center space-x-3 w-full px-4 py-2 text-sm text-gray-400 hover:bg-dark-elevated hover:text-white transition-colors">
-                  <HelpCircle className="w-4 h-4" />
-                  <span>Help</span>
-                </button>
-                <button className="flex items-center space-x-3 w-full px-4 py-2 text-sm text-critical hover:bg-dark-elevated transition-colors border-t border-[rgba(255,255,255,0.08)]">
-                  <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
-                </button>
-              </div>
+
+                {/* Menu Items */}
+                <div className="p-1.5">
+                  <button
+                    className="flex items-center space-x-3 w-full px-3 py-2 rounded-lg text-sm text-[#8B949E] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#F5F5F0] transition-colors"
+                    role="menuitem"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>Profile</span>
+                  </button>
+                  <button
+                    className="flex items-center space-x-3 w-full px-3 py-2 rounded-lg text-sm text-[#8B949E] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#F5F5F0] transition-colors"
+                    onClick={handleSettings}
+                    role="menuitem"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
+                  </button>
+                  <button
+                    className="flex items-center space-x-3 w-full px-3 py-2 rounded-lg text-sm text-[#8B949E] hover:bg-[rgba(255,255,255,0.06)] hover:text-[#F5F5F0] transition-colors"
+                    role="menuitem"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                    <span>Help & Support</span>
+                  </button>
+                </div>
+
+                {/* Logout */}
+                <div className="p-1.5 border-t border-[rgba(255,255,255,0.07)]">
+                  <button
+                    className="flex items-center space-x-3 w-full px-3 py-2 rounded-lg text-sm text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors font-medium"
+                    onClick={handleLogout}
+                    role="menuitem"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
         </div>
       </div>
     </header>
   );
 };
+
+export default Topbar;
