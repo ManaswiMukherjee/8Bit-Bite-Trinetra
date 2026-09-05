@@ -21,7 +21,9 @@ export function listPositions() {
     mac_address: d.mac_address,
     x: d.x,
     y: d.y,
+    // is_active from the band means "this band is in SOS"
     isActive: d.isActive,
+    sos: d.isActive,
     online: now - d.lastSeen <= STALE_MS,
     lastSeen: d.lastSeen,
   }));
